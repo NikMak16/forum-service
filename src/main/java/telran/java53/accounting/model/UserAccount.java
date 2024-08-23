@@ -25,28 +25,28 @@ public class UserAccount {
 	@Setter
 	String password;
 
-	Set<String> roles = new HashSet<>();
+	Set<Role> roles = new HashSet<>();
 
 	public UserAccount() {
 		roles = new HashSet<>();
-		roles.add("USER");
+		roles.add(Role.USER);
 	}
 
-	public UserAccount(String login, String firstName, String lastName, String password, Set<String> roles) {
+	public UserAccount(String login, String firstName, String lastName, String password) {
 		this();
 		this.login = login;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.password = password;
-		this.roles = roles;
+
 	}
 
 	public boolean addRole(String role) {
-		return roles.add(role);
+		return roles.add(Role.valueOf(role.toUpperCase()));
 	}
 
 	public boolean removeRole(String role) {
-		return roles.remove(role);
+		return roles.remove(Role.valueOf(role.toUpperCase()));
 	}
 
 }
