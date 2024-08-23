@@ -9,8 +9,9 @@ import telran.java53.accounting.dto.RolesDto;
 import telran.java53.accounting.dto.UserDto;
 import telran.java53.accounting.dto.UserEditDto;
 import telran.java53.accounting.dto.UserRegisterDto;
+import telran.java53.accounting.dto.exceptions.UserAlreadyExistsException;
 import telran.java53.accounting.dto.exceptions.UserNotFoundException;
-import telran.java53.accounting.model.User;
+import telran.java53.accounting.model.UserAccount;
 
 @Service
 @RequiredArgsConstructor
@@ -22,29 +23,29 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	public UserDto register(UserRegisterDto userRegisterDto) {
 		if(userAccountRepository.findById(userRegisterDto.getLogin()).isPresent()) {
-			return null; //what to return/throw in case if login is already taken?
+			throw new UserAlreadyExistsException(); 
 		}
-		User user = modelMapper.map(userRegisterDto, User.class);
+		UserAccount user = modelMapper.map(userRegisterDto, UserAccount.class);
 		userAccountRepository.save(user);
 		return modelMapper.map(user, UserDto.class);
 	}
 
 	@Override
 	public UserDto getUser(String login) {
-		User user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		UserAccount user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		return modelMapper.map(user, UserDto.class);
 	}
 
 	@Override
 	public UserDto removeUser(String login) {
-		User user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		UserAccount user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		userAccountRepository.deleteById(login);
 		return modelMapper.map(user, UserDto.class);
 	}
 
 	@Override
 	public UserDto updateUser(String login, UserEditDto userEditDto) {
-		User user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		UserAccount user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		if(userEditDto.getFirstName() != null) {
 			user.setFirstName(userEditDto.getFirstName());
 		}
@@ -58,19 +59,20 @@ public class UserAccountServiceImpl implements UserAccountService {
 
 	@Override
 	public RolesDto changeRolesList(String login, String role, boolean isAddRole) {
-		User user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		UserAccount user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		boolean res;
 		if(isAddRole) {
-			user.addRole(role);
+			res = user.addRole(role);
 		}else {
-			user.removeRole(role);
+			res = user.removeRole(role);
 		}
-		userAccountRepository.save(user);
+		if(res) {userAccountRepository.save(user);}
 		return modelMapper.map(user, RolesDto.class);
 	}
 
 	@Override
 	public void changePassword(String login, String newPassword) {
-		User user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
+		UserAccount user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		user.setPassword(newPassword);
 		userAccountRepository.save(user);
 	}

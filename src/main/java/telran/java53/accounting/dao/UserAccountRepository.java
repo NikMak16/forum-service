@@ -5,9 +5,9 @@ import java.util.stream.Stream;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import telran.java53.accounting.model.User;
+import telran.java53.accounting.model.UserAccount;
 
 
-public interface UserAccountRepository extends MongoRepository<User, String> {
-	Stream<User> getAllBy();//is it needed to get findById working?
+public interface UserAccountRepository extends MongoRepository<UserAccount, String> {
+	Stream<UserAccount> getAllBy();//is it needed to get findById working?
 }	
