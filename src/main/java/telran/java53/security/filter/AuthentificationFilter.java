@@ -30,6 +30,7 @@ public class AuthentificationFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
 			throws IOException, ServletException {
+		System.out.println("Auth Filter");
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 if (checkEndpoint(request.getMethod(), request.getServletPath())) {
@@ -49,7 +50,8 @@ if (checkEndpoint(request.getMethod(), request.getServletPath())) {
 	}
 	
 	private boolean checkEndpoint(String method, String path) {
-		return !("POST".equalsIgnoreCase(method) && path.matches("/account/register"));
+		return !("POST".equalsIgnoreCase(method) && path.matches("/account/register")
+				|| "GET".equalsIgnoreCase(method) && path.matches("/forum/posts/.+"));
 	}
 
 	private String[] getCredentials(String header) {
