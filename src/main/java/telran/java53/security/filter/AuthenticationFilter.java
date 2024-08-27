@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Base64;
 
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -17,57 +18,38 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import telran.java53.accounting.dao.UserAccountRepository;
-import telran.java53.accounting.model.Role;
 import telran.java53.accounting.model.UserAccount;
 
 @Component
-@Order(15)
 @RequiredArgsConstructor
-public class OwnerRoleFilter implements Filter {
+@Order(10)
+public class AuthenticationFilter implements Filter {
 
-	final UserAccountRepository userAccountRepository;
+	final UserAccountRepository repository;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
 			throws IOException, ServletException {
-		System.out.println("OwnerVerif");
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
-		if (checkEndpointOwnerOnly(request.getMethod(), request.getServletPath())) {
+		if (checkEndpoint(request.getMethod(), request.getServletPath())) {
 			try {
 				String[] credentials = getCredentials(request.getHeader("Authorization"));
-				String login = request.getServletPath().split("/")[3];
-				if (!credentials[0].equals(login)) {
+				UserAccount userAccount = repository.findById(credentials[0]).orElseThrow(RuntimeException::new);
+				if (!BCrypt.checkpw(credentials[1], userAccount.getPassword())) {
 					throw new RuntimeException();
 				}
-				
+				request = new WrappedRequest(request, userAccount.getLogin());
 			} catch (Exception e) {
 				response.sendError(401);
 				return;
 			}
 		}
-		else if(checkEndpointOwnerOrAdmin(request.getMethod(), request.getServletPath())) {
-			try {
-				String[] credentials = getCredentials(request.getHeader("Authorization"));
-				String login = request.getServletPath().split("/")[3];
-
-				UserAccount userAccount = userAccountRepository.findById(credentials[0]).orElseThrow(RuntimeException::new);
-				if (!(userAccount.getRoles().contains(Role.ADMINISTRATOR) || credentials[0].equals(login))) {
-					throw new RuntimeException();
-				}
-				request = new WrappedRequest(request, userAccount.getLogin());
-			}catch(Exception e) {
-				response.sendError(401);
-				return;
-			}
-		}
 		chain.doFilter(request, response);
-
 	}
-	
 
-	private boolean checkEndpointOwnerOrAdmin(String method, String path) {
-		return method.equalsIgnoreCase("Delete") && path.matches("/account/user/([a-zA-Z0-9]+)");
+	private boolean checkEndpoint(String method, String path) {
+		return !("POST".equalsIgnoreCase(method) && path.matches("/account/register"));
 	}
 
 	private String[] getCredentials(String header) {
@@ -76,17 +58,14 @@ public class OwnerRoleFilter implements Filter {
 		return decode.split(":");
 	}
 
-	private boolean checkEndpointOwnerOnly(String method, String path) {
-		return (method.equalsIgnoreCase("Put") && path.matches("/account/user/([a-zA-Z0-9]+)"));
-	}
-
-	private class WrappedRequest extends HttpServletRequestWrapper{
+	private class WrappedRequest extends HttpServletRequestWrapper {
 		private String login;
-		
+
 		public WrappedRequest(HttpServletRequest request, String login) {
 			super(request);
 			this.login = login;
 		}
+
 		@Override
 		public Principal getUserPrincipal() {
 			return () -> login;
