@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PathVariable;
+
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -15,7 +15,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import telran.java53.accounting.model.UserAccount;
+
 import telran.java53.post.dao.PostRepository;
 import telran.java53.post.model.Post;
 
