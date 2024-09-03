@@ -8,14 +8,16 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
 import lombok.RequiredArgsConstructor;
+import telran.java53.accounting.dao.UserAccountRepository;
 import telran.java53.accounting.model.Role;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfiguration {
-
+	final UserAccountRepository userAccountRepository;
 	final CustomWebSecurity webSecurity;
 
 	@Bean
@@ -23,11 +25,13 @@ public class SecurityConfiguration {
 		http.httpBasic(Customizer.withDefaults());
 		http.csrf(csrf -> csrf.disable());
 //		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS));
-		http.authorizeHttpRequests(authorize -> authorize
+
+		http.addFilterAfter(new PasswordExpirationFilter(userAccountRepository, webSecurity), AuthorizationFilter.class)
+		.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers("/account/register", "/forum/posts/**")
 					.permitAll()
-				.requestMatchers("/account/user/**", "/forum/post/**")
-					.access((authentication, context) -> new AuthorizationDecision(webSecurity.isPasswordNotExpired(authentication.get().getName())))
+//				.requestMatchers("/account/user/**", "/forum/post/**")
+//					.access((authentication, context) -> new AuthorizationDecision(webSecurity.isPasswordNotExpired(authentication.get().getName())))	
 				.requestMatchers("/account/user/{login}/role/{role}")
 					.hasRole(Role.ADMINISTRATOR.name())
 				.requestMatchers(HttpMethod.PUT, "/account/user/{login}")
@@ -46,6 +50,7 @@ public class SecurityConfiguration {
 				.access((authentication, context) -> {
 					boolean checkAuthor = webSecurity.checkPostAuthor(context.getVariables().get("id"),
 							authentication.get().getName());
+					System.out.println(checkAuthor);
 					boolean checkModerator = context.getRequest().isUserInRole(Role.MODERATOR.name());
 					return new AuthorizationDecision(checkAuthor || checkModerator);
 
