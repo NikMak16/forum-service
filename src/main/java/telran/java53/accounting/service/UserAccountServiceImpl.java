@@ -1,6 +1,8 @@
 package telran.java53.accounting.service;
 
 
+import java.time.LocalDate;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -32,6 +34,7 @@ public class UserAccountServiceImpl implements UserAccountService , CommandLineR
 			throw new UserAlreadyExistsException(); 
 		}
 		UserAccount user = modelMapper.map(userRegisterDto, UserAccount.class);
+		user.setPasswExpirationDate(LocalDate.now().plusDays(60));
 		String password = passwordEncoder.encode(userRegisterDto.getPassword());
 		user.setPassword(password);
 		userAccountRepository.save(user);
@@ -82,6 +85,7 @@ public class UserAccountServiceImpl implements UserAccountService , CommandLineR
 	public void changePassword(String login, String newPassword) {
 		UserAccount user = userAccountRepository.findById(login).orElseThrow(UserNotFoundException::new);
 		String password = passwordEncoder.encode(newPassword);
+		user.setPasswExpirationDate(LocalDate.now().plusDays(60));
 		user.setPassword(password);
 		userAccountRepository.save(user);
 	}

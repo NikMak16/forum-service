@@ -26,6 +26,8 @@ public class SecurityConfiguration {
 		http.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers("/account/register", "/forum/posts/**")
 					.permitAll()
+				.requestMatchers("/account/user/**", "/forum/post/**")
+					.access((authentication, context) -> new AuthorizationDecision(webSecurity.isPasswordNotExpired(authentication.get().getName())))
 				.requestMatchers("/account/user/{login}/role/{role}")
 					.hasRole(Role.ADMINISTRATOR.name())
 				.requestMatchers(HttpMethod.PUT, "/account/user/{login}")
