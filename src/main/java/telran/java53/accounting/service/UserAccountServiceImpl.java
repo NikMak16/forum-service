@@ -4,8 +4,9 @@ package telran.java53.accounting.service;
 import java.time.LocalDate;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.bcrypt.BCrypt;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,8 @@ public class UserAccountServiceImpl implements UserAccountService , CommandLineR
 	final UserAccountRepository userAccountRepository;
 	final ModelMapper modelMapper;
 	final PasswordEncoder passwordEncoder;
+	@Value("${password.period:30}")
+	long passwordPeriod;
 	
 	@Override
 	public UserDto register(UserRegisterDto userRegisterDto) {
@@ -34,7 +37,7 @@ public class UserAccountServiceImpl implements UserAccountService , CommandLineR
 			throw new UserAlreadyExistsException(); 
 		}
 		UserAccount user = modelMapper.map(userRegisterDto, UserAccount.class);
-		user.setPasswExpirationDate(LocalDate.now().plusDays(60));
+		user.setPasswExpirationDate(LocalDate.now().plusDays(passwordPeriod));
 		String password = passwordEncoder.encode(userRegisterDto.getPassword());
 		user.setPassword(password);
 		userAccountRepository.save(user);
